@@ -4,7 +4,7 @@ A python package utilizing the command-line blastn utility. Blast queries run th
 
 ## Example
 ```python
-from Blastn import Blastn, OutFmt
+from blast_python.Blastn import Blastn, OutFmt
 
 Blastn(
     db="db/NC_000001", 
