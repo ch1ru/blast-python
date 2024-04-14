@@ -1,6 +1,6 @@
 # Blast-python
 
-A python package utilizing the command-line blastn utility.
+A python package utilizing the command-line blastn utility. Blast queries run through an API can often be time-consuming due to limited service by the provider, and subject to network errors. This package aims to be a simple command-line wrapper for executing blast queries in python. 
 
 ## Example
 ```python
