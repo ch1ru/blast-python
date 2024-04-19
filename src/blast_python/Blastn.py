@@ -1,6 +1,8 @@
 import os
 import subprocess
 from enum import Enum
+from typing import Optional
+import json
 
 class bcolors:
     HEADER = '\033[95m'
@@ -101,7 +103,7 @@ class Blastn:
         num_threads: int = None,
         remote: bool = None,
         out: str = None,
-        outfmt: int | OutFmt = None,
+        outfmt: int = None,
         **kwargs
     ):
         
@@ -131,7 +133,7 @@ class Blastn:
         self._validate_params()
 
 
-    def run(self):
+    def run(self, verbose=True):
         """
         Execute blatn search subprocess.
 
@@ -150,24 +152,56 @@ class Blastn:
 
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        print("blastn query underway...")
+        if verbose:
+            print("blastn query underway...")
 
         while True:
-            output = process.stdout.readline()
-            print(output.strip().decode())
             # Do something else
             return_code = process.poll()
             if return_code is not None:
                 if return_code == 0:
                     # Process has finished, read rest of the output 
+                    message = ""
                     for output in process.stdout.readlines():
-                        print(output.strip())
-                    print("FINISHED")
+                        message += output.strip().decode()
+                        if verbose:
+                            print(message)
+                    if verbose:
+                        print("FINISHED")
                     if self.parameters['out'] is not None:
                         print(f"Results saved to {self.parameters['out']}")
+                    return (return_code, message)
                 else:
-                    print(bcolors.FAIL + f"ERROR: {process.stderr.readline().decode()}" + bcolors.ENDC)
-            return return_code
+                    message = ""
+                    for output in process.stderr.readlines():
+                        message = output.strip().decode()
+                        if verbose:
+                            print(message)
+                    print(bcolors.FAIL + f"ERROR: {message}" + bcolors.ENDC)
+                    return (return_code, message)
+                
+
+    def get_db_metadata(self, db_path: Optional[str] = None):
+        """Returns metadata for database files."""
+
+        if not db_path:
+            if self.parameters['db']:
+                db_path = self.parameters['db']
+            else:
+                raise Exception("No database file found")
+            
+        cmd = ['blastdbcmd', '-db', f'{db_path}', '-metadata']
+            
+        (stdout, stderr) = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+
+        if stdout:
+            output = json.loads(stdout.decode())
+            formatted_str = json.dumps(output, indent=2)
+            print(formatted_str)
+            return output
+        
+        if stderr:
+            raise Exception(stderr.decode())
 
 
     
